@@ -30,8 +30,6 @@
         .btn-primary:hover { background-color: var(--color-primary-hover); }
         .btn-accent { background-color: var(--color-accent); color: var(--color-text-on-accent); transition: background-color 0.3s; }
         .btn-accent:hover { background-color: var(--color-accent-hover); }
-        .focus-ring-primary:focus { --tw-ring-color: var(--color-primary); }
-        .focus-ring-accent:focus { --tw-ring-color: var(--color-accent); }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
@@ -50,10 +48,9 @@
             <div class="space-y-4">
                 <div>
                     <label for="propertyUrl" class="block text-sm font-medium" style="color: var(--color-text-primary);">Link do Imóvel</label>
-                    <input type="url" id="propertyUrl" value="https://santailha.com.br/imovel/casa-com-2-dormitorios-a-venda-100m2-campeche-florianopolis-sc-67087" class="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus-border-transparent focus-ring-primary transition-all">
-                    <p id="urlError" class="text-red-500 text-sm mt-1 hidden">Por favor, insira um link válido.</p>
+                    <input type="url" id="propertyUrl" value="https://santailha.com.br/imovel/casa-com-2-dormitorios-a-venda-100m2-campeche-florianopolis-sc-67087" class="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus-border-transparent focus:ring-primary transition-all">
                 </div>
-                <button id="generateBtn" class="w-full flex items-center justify-center font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus-ring-primary btn-primary transform active:scale-95">
+                <button id="generateBtn" class="w-full flex items-center justify-center font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary btn-primary transform active:scale-95">
                     <span id="btnText">Gerar Proposta</span>
                     <svg id="spinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -77,73 +74,66 @@
     <textarea id="copyHelper" style="position: absolute; left: -9999px;"></textarea>
 
     <script>
-        // --- Elementos do DOM ---
         const propertyUrlInput = document.getElementById('propertyUrl');
         const generateBtn = document.getElementById('generateBtn');
         const btnText = document.getElementById('btnText');
         const spinner = document.getElementById('spinner');
         const resultContainer = document.getElementById('resultContainer');
         const proposalOutput = document.getElementById('proposalOutput');
-        const urlError = document.getElementById('urlError');
         const copyBtn = document.getElementById('copyBtn');
         const copyHelper = document.getElementById('copyHelper');
 
-        // --- URL DO SEU BACKEND ---
-        const BACKEND_URL = 'https://apiscraping.vercel.app/api/scrape'; // URL DO SEU BACKEND NA VERCEL
-
-        // --- LÓGICA PRINCIPAL ---
         generateBtn.addEventListener('click', async () => {
             const url = propertyUrlInput.value;
-            if (!isValidUrl(url)) {
-                showError(true);
-                return;
-            }
-            showError(false);
             setLoading(true);
 
             try {
-                // 1. CHAMADA REAL AO BACKEND PARA FAZER O SCRAPING
-                const extractedData = await fetchPropertyData(url);
-
-                // 2. CHAMADA (AINDA SIMULADA) PARA A IA GERAR A PROPOSTA
-                //    (O próximo passo seria mover isso para o Make.com)
-                const proposalText = await simulateAIGeneration(extractedData);
-                
+                const extractedData = await fetchAndParsePropertyData(url);
+                const proposalText = generateProposalText(extractedData);
                 displayProposal(proposalText);
-
             } catch (error) {
-                console.error("Ocorreu um erro:", error);
-                displayProposal(`Houve um erro ao processar a sua solicitação: ${error.message}. Verifique o console para mais detalhes.`);
+                console.error("Erro ao processar:", error);
+                displayProposal(`Houve um erro ao processar a sua solicitação: ${error.message}`);
             } finally {
                 setLoading(false);
             }
         });
 
-        async function fetchPropertyData(url) {
-            console.log(`Chamando backend em: ${BACKEND_URL}`);
-            const response = await fetch(BACKEND_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: url }) // Envia a URL no corpo da requisição
-            });
-
+        async function fetchAndParsePropertyData(url) {
+            // Usamos um proxy público para contornar o problema de CORS.
+            // O `encodeURIComponent` garante que a URL seja passada corretamente.
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+            console.log(`Buscando dados via proxy: ${proxyUrl}`);
+            
+            const response = await fetch(proxyUrl);
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`O servidor respondeu com um erro: ${errorData.error || response.statusText}`);
+                throw new Error(`Falha ao buscar a página. Status: ${response.status}`);
             }
+            const html = await response.text();
 
-            const data = await response.json();
-            console.log("Dados recebidos do backend:", data);
-            return data;
+            // Usamos o DOMParser do próprio navegador para "ler" o HTML recebido.
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            // Função auxiliar para extrair texto de um seletor
+            const getText = (selector) => doc.querySelector(selector)?.textContent.trim() || '';
+
+            // Extraímos os dados usando os mesmos seletores de antes
+            const propertyData = {
+                title: getText('.title h1'),
+                location: getText('.title p'),
+                price: getText('.price h2'),
+                description: getText('.description p'),
+                mainFeatures: Array.from(doc.querySelectorAll('.features .feature-item span:last-child')).map(el => el.textContent.trim()),
+                allFeatures: Array.from(doc.querySelectorAll('.characteristics ul li')).map(el => el.textContent.trim())
+            };
+            
+            console.log("Dados extraídos:", propertyData);
+            return propertyData;
         }
         
-        // Esta função continua simulada. O ideal seria que o backend já chamasse a IA.
-        async function simulateAIGeneration(data) {
-            console.log("Gerando proposta com os dados extraídos...");
-            // Usando os dados recebidos para montar a proposta
+        function generateProposalText(data) {
             const { title, location, price, description, mainFeatures, allFeatures } = data;
-            
-            // Formatando os dados principais para exibição
             const mainFeaturesText = mainFeatures.join(', ');
 
             return `**Assunto:** Oportunidade Única: ${title}
@@ -175,7 +165,6 @@ Atenciosamente,
 **Santa Ilha Imóveis**`;
         }
         
-        // --- Funções Auxiliares ---
         function setLoading(isLoading) {
             generateBtn.disabled = isLoading;
             btnText.classList.toggle('hidden', isLoading);
@@ -185,20 +174,6 @@ Atenciosamente,
         function displayProposal(text) {
             proposalOutput.textContent = text.trim();
             resultContainer.classList.remove('hidden');
-        }
-
-        function showError(isError) {
-            urlError.classList.toggle('hidden', !isError);
-            propertyUrlInput.classList.toggle('border-red-500', isError);
-        }
-
-        function isValidUrl(string) {
-            try {
-                new URL(string);
-                return true;
-            } catch (_) {
-                return false;
-            }
         }
 
         copyBtn.addEventListener('click', () => {
