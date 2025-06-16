@@ -88,13 +88,9 @@
             setLoading(true);
 
             try {
-                // Nova função que usa a API em vez de scraping
                 const extractedData = await fetchPropertyDataFromAPI(url);
-                
-                // Esta parte continua a mesma, mas agora recebe dados fiáveis da API
                 const proposalText = generateProposalText(extractedData);
                 displayProposal(proposalText);
-
             } catch (error) {
                 console.error("Erro ao processar:", error);
                 displayProposal(`Houve um erro ao processar a sua solicitação: ${error.message}`);
@@ -106,15 +102,13 @@
         function extractPropertyCode(url) {
             try {
                 const pathSegments = new URL(url).pathname.split('/');
-                // O código do imóvel geralmente é o último segmento do URL
-                const lastSegment = pathSegments.pop() || pathSegments.pop(); // Lida com barras no final
-                const code = lastSegment.split('-').pop(); // Pega a parte numérica final, ex: 'sc-67087' -> '67087'
+                const lastSegment = pathSegments.pop() || pathSegments.pop();
+                const code = lastSegment.split('-').pop();
                 if (!/^\d+$/.test(code)) {
-                    throw new Error("Código numérico não encontrado no final do segmento.");
+                    throw new Error("Código numérico não encontrado no final do URL.");
                 }
                 return code;
             } catch (e) {
-                console.error("Não foi possível extrair o código do imóvel do URL:", url);
                 throw new Error("O URL do imóvel fornecido não parece ser válido.");
             }
         }
@@ -122,62 +116,55 @@
         async function fetchPropertyDataFromAPI(url) {
             const propertyCode = extractPropertyCode(url);
             
-            // --- SUBSTITUIR COM OS SEUS DADOS REAIS DO VISTA ---
-            const VISTA_API_ENDPOINT = `https://api.vista.com.br/v1/imoveis/${propertyCode}`;
+            // --- 1. SUBSTITUA COM OS SEUS DADOS REAIS DO VISTA ---
+            const VISTA_HOST = "https://SEU_HOST.vistanet.com.br"; // Ex: "https://santailha.vistanet.com.br"
             const VISTA_API_KEY = "SUA_CHAVE_DE_API_AQUI"; 
             // ----------------------------------------------------
-
-            console.log(`Buscando dados da API para o código: ${propertyCode}`);
             
-            // A chamada real à API seria algo como:
-            /*
-            const response = await fetch(VISTA_API_ENDPOINT, {
+            // O endpoint da API do Vista para buscar detalhes de um imóvel.
+            // A sua documentação da API pode indicar um caminho diferente.
+            const apiEndpoint = `${VISTA_HOST}/api/v1/imoveis/detalhes?imovel=${propertyCode}`;
+
+            console.log(`Buscando dados da API Vista: ${apiEndpoint}`);
+            
+            // Usamos um proxy público para evitar problemas de CORS, uma vez que a chamada é feita do navegador.
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiEndpoint)}`;
+            
+            const response = await fetch(proxyUrl, {
                 headers: {
-                    'Authorization': `Bearer ${VISTA_API_KEY}`
+                    // O cabeçalho de autorização deve ser passado para o proxy, que o encaminhará.
+                    // O formato do Vista geralmente é 'key SUA_CHAVE'. Verifique a sua documentação.
+                    'Authorization': `key ${VISTA_API_KEY}`
                 }
             });
 
             if (!response.ok) {
-                throw new Error(`Falha ao buscar dados da API. Status: ${response.status}`);
+                throw new Error(`Falha ao buscar dados da API. O proxy retornou status: ${response.status}`);
             }
-            const apiData = await response.json();
-            */
-
-            // --- SIMULAÇÃO DA RESPOSTA DA API ---
-            // Para fins de demonstração, vamos simular que a API nos retornou os dados.
-            // Você precisará mapear os campos da sua API real para este formato.
-            console.log("SIMULANDO chamada à API. Substitua esta secção pela chamada real.");
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Simula o tempo de espera da rede
             
-            const simulatedApiData = {
-                Titulo: "Casa com 2 dormitórios à venda no Campeche",
-                Bairro: "Campeche",
-                Cidade: "Florianópolis",
-                UF: "SC",
-                ValorVenda: "980.000",
-                AreaTotal: "100",
-                Dormitorios: "2",
-                Suites: "1",
-                Banheiros: "2",
-                Vagas: "1",
-                DescricaoWeb: "A casa de condomínio está localizado no bairro Campeche possui 100 metros quadrados com 2 quartos sendo 1 suite e 2 banheiros. Possui espaço gourmet, jardim, parquinho com diferentes brinquedos. Vai lhe possibilitar curtir os dias mais quentes na piscina. Espaço reservado para preparar o seu churrasco.",
-                Caracteristicas: ["Piscina", "Espaço gourmet", "Jardim", "Playground", "Churrasqueira", "Condomínio fechado"]
-            };
-            // ------------------------------------
+            const proxyResponse = await response.json();
+            // A API allorigins envolve a resposta real num campo "contents"
+            const apiData = JSON.parse(proxyResponse.contents);
 
-            // Mapeamos os dados da API (simulada) para o nosso formato de objeto `propertyData`
+            if (!apiData) {
+                throw new Error("A resposta da API do Vista está vazia ou em formato incorreto.");
+            }
+
+            // --- 2. MAPEAMENTO DOS DADOS REAIS DA API ---
+            // IMPORTANTE: Você precisará ajustar os nomes dos campos abaixo
+            // para corresponderem exatamente aos nomes retornados pela sua API do Vista.
             const propertyData = {
-                title: simulatedApiData.Titulo,
-                location: `${simulatedApiData.Bairro}, ${simulatedApiData.Cidade}, ${simulatedApiData.UF}`,
-                price: `R$ ${simulatedApiData.ValorVenda}`,
-                description: simulatedApiData.DescricaoWeb,
+                title: apiData.Titulo || "Título não disponível",
+                location: `${apiData.Bairro}, ${apiData.Cidade}, ${apiData.UF}`,
+                price: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(apiData.ValorVenda || 0),
+                description: apiData.DescricaoWeb || "Descrição não disponível.",
                 mainFeatures: [
-                    `${simulatedApiData.AreaTotal}m²`,
-                    `${simulatedApiData.Dormitorios} Quartos`,
-                    `${simulatedApiData.Suites} Suíte`,
-                    `${simulatedApiData.Vagas} Vaga(s)`
-                ],
-                allFeatures: simulatedApiData.Caracteristicas
+                    apiData.AreaTotal ? `${apiData.AreaTotal}m²` : '',
+                    apiData.Dormitorios ? `${apiData.Dormitorios} Quarto(s)` : '',
+                    apiData.Suites ? `${apiData.Suites} Suíte(s)` : '',
+                    apiData.Vagas ? `${apiData.Vagas} Vaga(s)` : ''
+                ].filter(Boolean), // Filtra campos vazios
+                allFeatures: apiData.Caracteristicas || [] // Assume que 'Caracteristicas' é um array de strings
             };
 
             console.log("Dados da API mapeados:", propertyData);
