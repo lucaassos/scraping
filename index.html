@@ -64,7 +64,7 @@
                 <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
                     <pre id="proposalOutput" class="whitespace-pre-wrap text-sm leading-relaxed" style="font-family: 'Inter', sans-serif; color: var(--color-text-primary);"></pre>
                 </div>
-                 <button id="copyBtn" class="mt-4 w-full flex items-center justify-center font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus-ring-accent btn-accent">
+                 <button id="copyBtn" class="mt-4 w-full flex items-center justify-center font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent btn-accent">
                     Copiar Texto
                 </button>
             </div>
@@ -123,12 +123,12 @@
 
             // *** SELETORES CORRIGIDOS ***
             const propertyData = {
-                title: getText('.property-details__header h1'),
-                location: getText('.property-details__header p'),
-                price: getText('.property-price h2'),
-                description: getText('.property-description p'),
-                mainFeatures: Array.from(doc.querySelectorAll('.property-features .property-feature__value')).map(el => el.textContent.trim()),
-                allFeatures: Array.from(doc.querySelectorAll('.property-characteristics ul li')).map(el => el.textContent.trim())
+                title: getText('.title h1'),
+                location: getText('.title p'),
+                price: getText('.price h2'),
+                description: getText('.description p'),
+                mainFeatures: Array.from(doc.querySelectorAll('.features .feature-item span:last-of-type')).map(el => el.textContent.trim()),
+                allFeatures: Array.from(doc.querySelectorAll('.characteristics ul li')).map(el => el.textContent.trim())
             };
             
             console.log("Dados extraídos:", propertyData);
