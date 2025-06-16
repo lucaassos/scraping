@@ -83,14 +83,30 @@
         const copyBtn = document.getElementById('copyBtn');
         const copyHelper = document.getElementById('copyHelper');
 
+        // URL do nosso backend na Vercel.
+        const BACKEND_ENDPOINT = 'https://apiscraping.vercel.app/api/vista'; // Atualizado para um nome mais claro
+
         generateBtn.addEventListener('click', async () => {
             const url = propertyUrlInput.value;
             setLoading(true);
 
             try {
-                const extractedData = await fetchPropertyDataFromAPI(url);
+                // A chamada agora é para o nosso backend, passando apenas a URL do imóvel.
+                const response = await fetch(BACKEND_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `Erro do servidor: ${response.status}`);
+                }
+
+                const extractedData = await response.json();
                 const proposalText = generateProposalText(extractedData);
                 displayProposal(proposalText);
+
             } catch (error) {
                 console.error("Erro ao processar:", error);
                 displayProposal(`Houve um erro ao processar a sua solicitação: ${error.message}`);
@@ -98,79 +114,8 @@
                 setLoading(false);
             }
         });
-
-        function extractPropertyCode(url) {
-            try {
-                const pathSegments = new URL(url).pathname.split('/');
-                const lastSegment = pathSegments.pop() || pathSegments.pop();
-                const code = lastSegment.split('-').pop();
-                if (!/^\d+$/.test(code)) {
-                    throw new Error("Código numérico não encontrado no final do URL.");
-                }
-                return code;
-            } catch (e) {
-                throw new Error("O URL do imóvel fornecido não parece ser válido.");
-            }
-        }
-
-        async function fetchPropertyDataFromAPI(url) {
-            const propertyCode = extractPropertyCode(url);
-            
-            // --- 1. SUBSTITUA COM OS SEUS DADOS REAIS DO VISTA ---
-            const VISTA_HOST = "https://santailh-rest.vistahost.com.br"; // Ex: "https://santailha.vistanet.com.br"
-            const VISTA_API_KEY = "694b89bd4eee81ee1379139d36ad99f1"; 
-            // ----------------------------------------------------
-            
-            // O endpoint da API do Vista para buscar detalhes de um imóvel.
-            // A sua documentação da API pode indicar um caminho diferente.
-            const apiEndpoint = `${VISTA_HOST}/api/v1/imoveis/detalhes?imovel=${propertyCode}`;
-
-            console.log(`Buscando dados da API Vista: ${apiEndpoint}`);
-            
-            // Usamos um proxy público para evitar problemas de CORS, uma vez que a chamada é feita do navegador.
-            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiEndpoint)}`;
-            
-            const response = await fetch(proxyUrl, {
-                headers: {
-                    // O cabeçalho de autorização deve ser passado para o proxy, que o encaminhará.
-                    // O formato do Vista geralmente é 'key SUA_CHAVE'. Verifique a sua documentação.
-                    'Authorization': `key ${VISTA_API_KEY}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Falha ao buscar dados da API. O proxy retornou status: ${response.status}`);
-            }
-            
-            const proxyResponse = await response.json();
-            // A API allorigins envolve a resposta real num campo "contents"
-            const apiData = JSON.parse(proxyResponse.contents);
-
-            if (!apiData) {
-                throw new Error("A resposta da API do Vista está vazia ou em formato incorreto.");
-            }
-
-            // --- 2. MAPEAMENTO DOS DADOS REAIS DA API ---
-            // IMPORTANTE: Você precisará ajustar os nomes dos campos abaixo
-            // para corresponderem exatamente aos nomes retornados pela sua API do Vista.
-            const propertyData = {
-                title: apiData.Titulo || "Título não disponível",
-                location: `${apiData.Bairro}, ${apiData.Cidade}, ${apiData.UF}`,
-                price: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(apiData.ValorVenda || 0),
-                description: apiData.DescricaoWeb || "Descrição não disponível.",
-                mainFeatures: [
-                    apiData.AreaTotal ? `${apiData.AreaTotal}m²` : '',
-                    apiData.Dormitorios ? `${apiData.Dormitorios} Quarto(s)` : '',
-                    apiData.Suites ? `${apiData.Suites} Suíte(s)` : '',
-                    apiData.Vagas ? `${apiData.Vagas} Vaga(s)` : ''
-                ].filter(Boolean), // Filtra campos vazios
-                allFeatures: apiData.Caracteristicas || [] // Assume que 'Caracteristicas' é um array de strings
-            };
-
-            console.log("Dados da API mapeados:", propertyData);
-            return propertyData;
-        }
         
+        // Esta função não precisa mais de fazer chamadas de rede, apenas formata o texto.
         function generateProposalText(data) {
             const { title, location, price, description, mainFeatures, allFeatures } = data;
             const mainFeaturesText = mainFeatures.join(' | ');
@@ -223,7 +168,6 @@ Atenciosamente,
             copyBtn.textContent = 'Copiado!';
             setTimeout(() => { copyBtn.textContent = originalText; }, 2000);
         });
-
     </script>
 </body>
 </html>
