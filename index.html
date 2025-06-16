@@ -100,6 +100,7 @@
         });
 
         async function fetchAndParsePropertyData(url) {
+            // Usamos um proxy público para contornar o problema de CORS.
             const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
             console.log(`Buscando dados via proxy: ${proxyUrl}`);
             
@@ -117,24 +118,17 @@
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
             
-            // Procura o container principal de detalhes para tornar a busca mais robusta.
-            const detailsContainer = doc.querySelector('.property-details');
-            if (!detailsContainer) {
-                console.error("Não foi possível encontrar o container principal '.property-details' na página.");
-                throw new Error("Não foi possível analisar a página do imóvel. Verifique se o link está correto e se a estrutura do site não mudou.");
-            }
+            // Função auxiliar para extrair texto de um seletor
+            const getText = (selector) => doc.querySelector(selector)?.textContent.trim() || '';
 
-            // Função auxiliar para extrair texto de um seletor DENTRO do container
-            const getText = (selector) => detailsContainer.querySelector(selector)?.textContent.trim() || '';
-
-            // Extrai os dados usando os seletores mais específicos
+            // *** SELETORES CORRIGIDOS ***
             const propertyData = {
-                title: getText('.title h1'),
-                location: getText('.title p'),
-                price: getText('.price h2'),
-                description: getText('.description p'),
-                mainFeatures: Array.from(detailsContainer.querySelectorAll('.features .feature-item span:last-child')).map(el => el.textContent.trim()),
-                allFeatures: Array.from(detailsContainer.querySelectorAll('.characteristics ul li')).map(el => el.textContent.trim())
+                title: getText('.property-details__header h1'),
+                location: getText('.property-details__header p'),
+                price: getText('.property-price h2'),
+                description: getText('.property-description p'),
+                mainFeatures: Array.from(doc.querySelectorAll('.property-features .property-feature__value')).map(el => el.textContent.trim()),
+                allFeatures: Array.from(doc.querySelectorAll('.property-characteristics ul li')).map(el => el.textContent.trim())
             };
             
             console.log("Dados extraídos:", propertyData);
