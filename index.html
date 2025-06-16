@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Ferramenta para gerar propostas comerciais para imóveis da Santa Ilha a partir de um link.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏠</text></svg>">
+    
+    <title>Gerador de Proposta de Imóvel - Santa Ilha</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --color-primary: #3d357e;
+            --color-primary-hover: #322c6a;
+            --color-accent: #edae0f;
+            --color-accent-hover: #d49c0d;
+            --color-background: #f9fafb;
+            --color-surface: #ffffff;
+            --color-text-primary: #1f2937;
+            --color-text-secondary: #6b7280;
+            --color-text-on-accent: #1f2937;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--color-background); }
+        .btn-primary { background-color: var(--color-primary); color: white; transition: background-color 0.3s; }
+        .btn-primary:hover { background-color: var(--color-primary-hover); }
+        .btn-accent { background-color: var(--color-accent); color: var(--color-text-on-accent); transition: background-color 0.3s; }
+        .btn-accent:hover { background-color: var(--color-accent-hover); }
+        .focus-ring-primary:focus { --tw-ring-color: var(--color-primary); }
+        .focus-ring-accent:focus { --tw-ring-color: var(--color-accent); }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-3xl rounded-2xl shadow-lg bg-white overflow-hidden transition-all duration-500">
+        <div class="p-6 text-center" style="background-color: var(--color-surface);">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASIAAABACAYAAADeH2AAAAF1SURBVHic7d1BTkNBFIXhZ1Iix8ABuAAH4AAdK3SACEgIkZ5U0jS1d+/e2ZzckzSx7v1PZqaJMWOMj/Nk8j55kAAn9S+ATyJAgIBXECAwBwQIEIhfQIDw3SCAAF8QIDAHBAgQiF9AgPDdIIAAXxAgMAcECBCIX0CA8N0ggABfECAwBwQIEIhfQIDw3SCAAF8QIDAHBAgQiF9AgPDdIIAAXxAgMAcECBCIX0CA8N0ggABfECAwBwQIEIhfQIDw3SCAAF8QIDAHBAgQiF9AgPDdIIAAXxAgMAcECBCIX0CA8N0ggABfECAwBwQIEIhfQIDw3SCAAF8QIDAHBAgQiF9AgPDdIIAAXxAgMAcECBCIX0CA8N0ggABfECAwBwQIEIhfQIDw3SCAAF8QIDAHBAgQiF9AgPDdIIAAXxAgMAcECBCIX0CA8N0ggABfECAwBwQIEIhfQIDw3SCAAF8QIDAHBAgQiF9AgPDdIIAAX5CXgA/yMPlJJuOScRmMJOOR8PZ+1g9ZeTsfJSNJ+/YnSYAAvjGvA1+XAR8k45HQ2YyEd+yff0mAAD6SlYAPkpHcZzKScQnZ7L9/TIAAPs9qwLtlwD/8V/4lAQJ8krUAfJKMV/4vCRAgQIAAgXkBAWb2hAYIECBAgAC/goAAmwIBAgQIECDwKwgIsCmQAAECBAgQ+BUFBNAUSETgW+BLAJ8kI/Oq8mUyco+yL79kK8hYyL5kX0aWfY/siwzZ9zWyL/Jk3//JvkyYff9n+zLD9v2fbcsM2fY9ty0zZN/33LbMkH3/d9syQ/b9n23LDNv3P7ctM2Tf/922zJB9//fZskP2/Z9tyww59wNAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgACBlwS+AbF9c0xKxAtwAAAAAElFTkSuQmCC" alt="Logo Santa Ilha" class="mx-auto h-14 w-auto">
+        </div>
+
+        <div class="p-8">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold" style="color: var(--color-text-primary);">Gerador de Proposta de Imóvel</h1>
+                <p class="mt-2" style="color: var(--color-text-secondary);">Cole o link do imóvel para gerar uma proposta comercial otimizada por IA.</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label for="propertyUrl" class="block text-sm font-medium" style="color: var(--color-text-primary);">Link do Imóvel</label>
+                    <input type="url" id="propertyUrl" value="https://santailha.com.br/imovel/casa-com-2-dormitorios-a-venda-100m2-campeche-florianopolis-sc-67087" class="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus-border-transparent focus-ring-primary transition-all">
+                    <p id="urlError" class="text-red-500 text-sm mt-1 hidden">Por favor, insira um link válido.</p>
+                </div>
+                <button id="generateBtn" class="w-full flex items-center justify-center font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus-ring-primary btn-primary transform active:scale-95">
+                    <span id="btnText">Gerar Proposta</span>
+                    <svg id="spinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div id="resultContainer" class="mt-8 pt-6 border-t border-gray-200 hidden">
+                <h2 class="text-2xl font-bold mb-4" style="color: var(--color-text-primary);">Proposta Gerada</h2>
+                <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
+                    <pre id="proposalOutput" class="whitespace-pre-wrap text-sm leading-relaxed" style="font-family: 'Inter', sans-serif; color: var(--color-text-primary);"></pre>
+                </div>
+                 <button id="copyBtn" class="mt-4 w-full flex items-center justify-center font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus-ring-accent btn-accent">
+                    Copiar Texto
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <textarea id="copyHelper" style="position: absolute; left: -9999px;"></textarea>
+
+    <script>
+        // --- Elementos do DOM ---
+        const propertyUrlInput = document.getElementById('propertyUrl');
+        const generateBtn = document.getElementById('generateBtn');
+        const btnText = document.getElementById('btnText');
+        const spinner = document.getElementById('spinner');
+        const resultContainer = document.getElementById('resultContainer');
+        const proposalOutput = document.getElementById('proposalOutput');
+        const urlError = document.getElementById('urlError');
+        const copyBtn = document.getElementById('copyBtn');
+        const copyHelper = document.getElementById('copyHelper');
+
+        // --- URL DO SEU BACKEND ---
+        const BACKEND_URL = 'https://apiscraping.vercel.app/api/scrape'; // URL DO SEU BACKEND NA VERCEL
+
+        // --- LÓGICA PRINCIPAL ---
+        generateBtn.addEventListener('click', async () => {
+            const url = propertyUrlInput.value;
+            if (!isValidUrl(url)) {
+                showError(true);
+                return;
+            }
+            showError(false);
+            setLoading(true);
+
+            try {
+                // 1. CHAMADA REAL AO BACKEND PARA FAZER O SCRAPING
+                const extractedData = await fetchPropertyData(url);
+
+                // 2. CHAMADA (AINDA SIMULADA) PARA A IA GERAR A PROPOSTA
+                //    (O próximo passo seria mover isso para o Make.com)
+                const proposalText = await simulateAIGeneration(extractedData);
+                
+                displayProposal(proposalText);
+
+            } catch (error) {
+                console.error("Ocorreu um erro:", error);
+                displayProposal(`Houve um erro ao processar a sua solicitação: ${error.message}. Verifique o console para mais detalhes.`);
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        async function fetchPropertyData(url) {
+            console.log(`Chamando backend em: ${BACKEND_URL}`);
+            const response = await fetch(BACKEND_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: url }) // Envia a URL no corpo da requisição
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`O servidor respondeu com um erro: ${errorData.error || response.statusText}`);
+            }
+
+            const data = await response.json();
+            console.log("Dados recebidos do backend:", data);
+            return data;
+        }
+        
+        // Esta função continua simulada. O ideal seria que o backend já chamasse a IA.
+        async function simulateAIGeneration(data) {
+            console.log("Gerando proposta com os dados extraídos...");
+            // Usando os dados recebidos para montar a proposta
+            const { title, location, price, description, mainFeatures, allFeatures } = data;
+            
+            // Formatando os dados principais para exibição
+            const mainFeaturesText = mainFeatures.join(', ');
+
+            return `**Assunto:** Oportunidade Única: ${title}
+
+**Prezado(a) Cliente,**
+
+Espero que este contato o encontre bem.
+
+Gostaria de apresentar uma oportunidade especial que acaba de surgir em nosso portfólio: um(a) **${title}**, localizado(a) em **${location}**.
+
+**Resumo da Propriedade:**
+- **Localização:** ${location}
+- **Valor de Investimento:** ${price}
+- **Características Principais:** ${mainFeaturesText}.
+
+**Descrição Detalhada:**
+${description}
+
+**Diferenciais do Imóvel:**
+${allFeatures.map(f => `- ${f}`).join('\n')}
+
+Acreditamos que esta propriedade representa um excelente investimento e um lugar maravilhoso para se viver.
+
+Gostaria de agendar uma visita para que você possa conhecer pessoalmente?
+
+Atenciosamente,
+
+**[Seu Nome]**
+**Santa Ilha Imóveis**`;
+        }
+        
+        // --- Funções Auxiliares ---
+        function setLoading(isLoading) {
+            generateBtn.disabled = isLoading;
+            btnText.classList.toggle('hidden', isLoading);
+            spinner.classList.toggle('hidden', !isLoading);
+        }
+
+        function displayProposal(text) {
+            proposalOutput.textContent = text.trim();
+            resultContainer.classList.remove('hidden');
+        }
+
+        function showError(isError) {
+            urlError.classList.toggle('hidden', !isError);
+            propertyUrlInput.classList.toggle('border-red-500', isError);
+        }
+
+        function isValidUrl(string) {
+            try {
+                new URL(string);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        copyBtn.addEventListener('click', () => {
+            copyHelper.value = proposalOutput.textContent;
+            copyHelper.select();
+            document.execCommand('copy');
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = 'Copiado!';
+            setTimeout(() => { copyBtn.textContent = originalText; }, 2000);
+        });
+
+    </script>
+</body>
+</html>
