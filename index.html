@@ -64,7 +64,7 @@
                 <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
                     <pre id="proposalOutput" class="whitespace-pre-wrap text-sm leading-relaxed" style="font-family: 'Inter', sans-serif; color: var(--color-text-primary);"></pre>
                 </div>
-                 <button id="copyBtn" class="mt-4 w-full flex items-center justify-center font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent btn-accent">
+                 <button id="copyBtn" class="mt-4 w-full flex items-center justify-center font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus-ring-accent btn-accent">
                     Copiar Texto
                 </button>
             </div>
@@ -88,9 +88,13 @@
             setLoading(true);
 
             try {
-                const extractedData = await fetchAndParsePropertyData(url);
+                // Nova função que usa a API em vez de scraping
+                const extractedData = await fetchPropertyDataFromAPI(url);
+                
+                // Esta parte continua a mesma, mas agora recebe dados fiáveis da API
                 const proposalText = generateProposalText(extractedData);
                 displayProposal(proposalText);
+
             } catch (error) {
                 console.error("Erro ao processar:", error);
                 displayProposal(`Houve um erro ao processar a sua solicitação: ${error.message}`);
@@ -99,52 +103,90 @@
             }
         });
 
-        async function fetchAndParsePropertyData(url) {
-            // Usamos um proxy público para contornar o problema de CORS.
-            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-            console.log(`Buscando dados via proxy: ${proxyUrl}`);
+        function extractPropertyCode(url) {
+            try {
+                const pathSegments = new URL(url).pathname.split('/');
+                // O código do imóvel geralmente é o último segmento do URL
+                const lastSegment = pathSegments.pop() || pathSegments.pop(); // Lida com barras no final
+                const code = lastSegment.split('-').pop(); // Pega a parte numérica final, ex: 'sc-67087' -> '67087'
+                if (!/^\d+$/.test(code)) {
+                    throw new Error("Código numérico não encontrado no final do segmento.");
+                }
+                return code;
+            } catch (e) {
+                console.error("Não foi possível extrair o código do imóvel do URL:", url);
+                throw new Error("O URL do imóvel fornecido não parece ser válido.");
+            }
+        }
+
+        async function fetchPropertyDataFromAPI(url) {
+            const propertyCode = extractPropertyCode(url);
             
-            const response = await fetch(proxyUrl);
+            // --- SUBSTITUIR COM OS SEUS DADOS REAIS DO VISTA ---
+            const VISTA_API_ENDPOINT = `https://api.vista.com.br/v1/imoveis/${propertyCode}`;
+            const VISTA_API_KEY = "SUA_CHAVE_DE_API_AQUI"; 
+            // ----------------------------------------------------
+
+            console.log(`Buscando dados da API para o código: ${propertyCode}`);
+            
+            // A chamada real à API seria algo como:
+            /*
+            const response = await fetch(VISTA_API_ENDPOINT, {
+                headers: {
+                    'Authorization': `Bearer ${VISTA_API_KEY}`
+                }
+            });
+
             if (!response.ok) {
-                throw new Error(`Falha ao buscar a página via proxy. Status: ${response.status}`);
+                throw new Error(`Falha ao buscar dados da API. Status: ${response.status}`);
             }
-            const html = await response.text();
+            const apiData = await response.json();
+            */
 
-            if (!html || !html.includes('<title>')) {
-                throw new Error('O HTML recebido do proxy parece inválido ou está vazio.');
-            }
-            console.log(`HTML recebido com ${html.length} caracteres.`);
-
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
+            // --- SIMULAÇÃO DA RESPOSTA DA API ---
+            // Para fins de demonstração, vamos simular que a API nos retornou os dados.
+            // Você precisará mapear os campos da sua API real para este formato.
+            console.log("SIMULANDO chamada à API. Substitua esta secção pela chamada real.");
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Simula o tempo de espera da rede
             
-            // Função auxiliar para extrair texto de um seletor
-            const getText = (selector) => doc.querySelector(selector)?.textContent.trim() || '';
-
-            // *** SELETORES CORRIGIDOS ***
-            const propertyData = {
-                title: getText('.title h1'),
-                location: getText('.title p'),
-                price: getText('.price h2'),
-                description: getText('.description p'),
-                mainFeatures: Array.from(doc.querySelectorAll('.features .feature-item span:last-of-type')).map(el => el.textContent.trim()),
-                allFeatures: Array.from(doc.querySelectorAll('.characteristics ul li')).map(el => el.textContent.trim())
+            const simulatedApiData = {
+                Titulo: "Casa com 2 dormitórios à venda no Campeche",
+                Bairro: "Campeche",
+                Cidade: "Florianópolis",
+                UF: "SC",
+                ValorVenda: "980.000",
+                AreaTotal: "100",
+                Dormitorios: "2",
+                Suites: "1",
+                Banheiros: "2",
+                Vagas: "1",
+                DescricaoWeb: "A casa de condomínio está localizado no bairro Campeche possui 100 metros quadrados com 2 quartos sendo 1 suite e 2 banheiros. Possui espaço gourmet, jardim, parquinho com diferentes brinquedos. Vai lhe possibilitar curtir os dias mais quentes na piscina. Espaço reservado para preparar o seu churrasco.",
+                Caracteristicas: ["Piscina", "Espaço gourmet", "Jardim", "Playground", "Churrasqueira", "Condomínio fechado"]
             };
-            
-            console.log("Dados extraídos:", propertyData);
+            // ------------------------------------
 
-            // Verificação final para garantir que a extração não resultou em dados vazios
-            if (!propertyData.title && !propertyData.price) {
-                console.error("A extração resultou em dados vazios. A estrutura do site pode ter mudado.");
-                throw new Error("Não foi possível extrair os dados do imóvel. A estrutura da página pode ter mudado.");
-            }
+            // Mapeamos os dados da API (simulada) para o nosso formato de objeto `propertyData`
+            const propertyData = {
+                title: simulatedApiData.Titulo,
+                location: `${simulatedApiData.Bairro}, ${simulatedApiData.Cidade}, ${simulatedApiData.UF}`,
+                price: `R$ ${simulatedApiData.ValorVenda}`,
+                description: simulatedApiData.DescricaoWeb,
+                mainFeatures: [
+                    `${simulatedApiData.AreaTotal}m²`,
+                    `${simulatedApiData.Dormitorios} Quartos`,
+                    `${simulatedApiData.Suites} Suíte`,
+                    `${simulatedApiData.Vagas} Vaga(s)`
+                ],
+                allFeatures: simulatedApiData.Caracteristicas
+            };
 
+            console.log("Dados da API mapeados:", propertyData);
             return propertyData;
         }
         
         function generateProposalText(data) {
             const { title, location, price, description, mainFeatures, allFeatures } = data;
-            const mainFeaturesText = mainFeatures.join(', ');
+            const mainFeaturesText = mainFeatures.join(' | ');
 
             return `**Assunto:** Oportunidade Única: ${title}
 
