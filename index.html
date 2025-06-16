@@ -100,35 +100,51 @@
         });
 
         async function fetchAndParsePropertyData(url) {
-            // Usamos um proxy público para contornar o problema de CORS.
-            // O `encodeURIComponent` garante que a URL seja passada corretamente.
             const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
             console.log(`Buscando dados via proxy: ${proxyUrl}`);
             
             const response = await fetch(proxyUrl);
             if (!response.ok) {
-                throw new Error(`Falha ao buscar a página. Status: ${response.status}`);
+                throw new Error(`Falha ao buscar a página via proxy. Status: ${response.status}`);
             }
             const html = await response.text();
 
-            // Usamos o DOMParser do próprio navegador para "ler" o HTML recebido.
+            if (!html || !html.includes('<title>')) {
+                throw new Error('O HTML recebido do proxy parece inválido ou está vazio.');
+            }
+            console.log(`HTML recebido com ${html.length} caracteres.`);
+
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
+            
+            // Procura o container principal de detalhes para tornar a busca mais robusta.
+            const detailsContainer = doc.querySelector('.property-details');
+            if (!detailsContainer) {
+                console.error("Não foi possível encontrar o container principal '.property-details' na página.");
+                throw new Error("Não foi possível analisar a página do imóvel. Verifique se o link está correto e se a estrutura do site não mudou.");
+            }
 
-            // Função auxiliar para extrair texto de um seletor
-            const getText = (selector) => doc.querySelector(selector)?.textContent.trim() || '';
+            // Função auxiliar para extrair texto de um seletor DENTRO do container
+            const getText = (selector) => detailsContainer.querySelector(selector)?.textContent.trim() || '';
 
-            // Extraímos os dados usando os mesmos seletores de antes
+            // Extrai os dados usando os seletores mais específicos
             const propertyData = {
                 title: getText('.title h1'),
                 location: getText('.title p'),
                 price: getText('.price h2'),
                 description: getText('.description p'),
-                mainFeatures: Array.from(doc.querySelectorAll('.features .feature-item span:last-child')).map(el => el.textContent.trim()),
-                allFeatures: Array.from(doc.querySelectorAll('.characteristics ul li')).map(el => el.textContent.trim())
+                mainFeatures: Array.from(detailsContainer.querySelectorAll('.features .feature-item span:last-child')).map(el => el.textContent.trim()),
+                allFeatures: Array.from(detailsContainer.querySelectorAll('.characteristics ul li')).map(el => el.textContent.trim())
             };
             
             console.log("Dados extraídos:", propertyData);
+
+            // Verificação final para garantir que a extração não resultou em dados vazios
+            if (!propertyData.title && !propertyData.price) {
+                console.error("A extração resultou em dados vazios. A estrutura do site pode ter mudado.");
+                throw new Error("Não foi possível extrair os dados do imóvel. A estrutura da página pode ter mudado.");
+            }
+
             return propertyData;
         }
         
